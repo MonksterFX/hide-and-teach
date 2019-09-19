@@ -1,0 +1,4 @@
+https://towardsdatascience.com/how-to-write-a-jupyter-notebook-extension-a63f9578a38c
+
+Path for ENV
+C:\ProgramData\Anaconda3\share\jupyter\nbextensions
