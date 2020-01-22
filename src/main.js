@@ -5,24 +5,47 @@ define([
     'base/js/events'
 ], function (Jupyter, events) {
 
-    var make_practice_cell = function () {
+    var protected_cell = function () {
         var selected_cells = Jupyter.notebook.get_selected_cells();
-        selected_cells[0].metadata["practice_cell"] = true;
-        selected_cells[0].element.css("border", "2px dashed purple")
+        selected_cells[0].metadata["ht_protected"] = true;
+        selected_cells[0].element.css("border", "2px dashed green")
     }
 
-    var clear_practice_cell = function () {
+    var enforce_remove = function () {
         var selected_cells = Jupyter.notebook.get_selected_cells();
-        selected_cells[0].metadata["practice_cell"] = false;
+        selected_cells[0].metadata["ht_enforce_remove"] = true;
+        selected_cells[0].element.css("border", "2px dashed orange")
+    }
+
+    var clear_tags = function () {
+        var selected_cells = Jupyter.notebook.get_selected_cells();
+	// ToDo: remove metadata tag
+        delete selected_cells[0].metadata["ht_protected"];
+        delete selected_cells[0].metadata["ht_enforce_remove"];
         selected_cells[0].element.css("border", "")
+    }
+
+    var convert_from_v1_to_v2 = function () {
+        var cells = Jupyter.notebook.get_cells();
+        for (var ii = 0; ii < cells.length; ii++) {
+            var cell = cells[ii];
+            if (cell.metadata["practice_cell"] === true) {
+				delete cell.metadata["practice_cell"];
+				cell.metadata["ht_protected"] = true;
+            }
+        }
     }
 
     var show_marker = function(){
         var cells = Jupyter.notebook.get_cells();
         for (var ii = 0; ii < cells.length; ii++) {
             var cell = cells[ii];
-            if (cell.metadata["practice_cell"] === true) {
-                cell.element.css("border", "2px dashed purple");
+            if (cell.metadata["ht_protected"] === true) {
+                cell.element.css("border", "2px dashed green");
+            }
+			
+			if (cell.metadata["ht_enforce_remove"] === true) {
+                cell.element.css("border", "2px dashed orange");
             }
         }
     }
@@ -31,9 +54,7 @@ define([
         var cells = Jupyter.notebook.get_cells();
         for (var ii = 0; ii < cells.length; ii++) {
             var cell = cells[ii];
-            if (cell.metadata["practice_cell"] === true) {
-                cell.element.css("border", "None");
-            }
+            cell.element.css("border", "None");
         }
     }
 
@@ -48,16 +69,22 @@ define([
         // https://jupyter-notebook.readthedocs.io/en/stable/extending/frontend_extensions.html#defining-and-registering-your-own-actions
         Jupyter.toolbar.add_buttons_group([
             Jupyter.keyboard_manager.actions.register({
-                'help': 'Tag as practice cell',
+                'help': 'protect against removement/hiding',
                 'icon': 'fa-minus-square',
-                'handler': make_practice_cell
-            }, 'make-practice-cell', 'Make practice cell'),
+                'handler': protected_cell
+            }, 'protect-cell', 'Protect cell'),
+			
+			Jupyter.keyboard_manager.actions.register({
+                'help': 'enforce removement of cell',
+                'icon': 'fa-minus-square',
+                'handler': enforce_remove
+            }, 'enforce-remove', 'enforce remove'),
 
             Jupyter.keyboard_manager.actions.register({
-                'help': 'Untag as practice cell',
+                'help': 'clear tags',
                 'icon': 'fa-undo',
-                'handler': clear_practice_cell
-            }, 'clean-practice-cell', 'Clean practice cell'),
+                'handler': clear_tags
+            }, 'clean-cell', 'clean tags'),
         ])
             
 
@@ -84,9 +111,11 @@ define([
         defaultCellButton();
 
         if (Jupyter.notebook._fully_loaded) {
-            init_show_marker();
+            convert_from_v1_to_v2();
+	    init_show_marker();
         } else {
             $([Jupyter.events]).on("notebook_loaded.Notebook", function () {
+                convert_from_v1_to_v2();
                 init_show_marker();
             })
         }
