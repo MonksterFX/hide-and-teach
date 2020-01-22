@@ -7,8 +7,13 @@ define([
 
     var protected_cell = function () {
         var selected_cells = Jupyter.notebook.get_selected_cells();
-        selected_cells[0].metadata["ht_protected"] = true;
-        selected_cells[0].element.css("border", "2px dashed green")
+        
+        for (const element of selected_cells) {
+            // elected_cells[0].metadata["ht_protected"] = true;
+            // selected_cells[0].element.css("border", "2px dashed green")
+            element.metadata["ht_protected"] = true;
+            element.element.css("border", "2px dashed green")
+        }
     }
 
     var enforce_remove = function () {
